@@ -73,15 +73,13 @@ def route(s_el, e_el):
             start, end = (sx0 - GAP, y), (ex1 + GAP, y)
         s_focus = (y - scy) / ((sy1 - sy0) / 2 or 1)
         e_focus = (y - ecy) / ((ey1 - ey0) / 2 or 1)
-    else:  # vertical arrow
-        x = min(max(scx if (sx1 - sx0) <= (ex1 - ex0) else ecx, max(sx0, ex0)), min(sx1, ex1)) \
-            if min(sx1, ex1) > max(sx0, ex0) else (scx + ecx) / 2
+    else:  # vertical arrow: center of source edge to center of target edge (angled when centers differ)
         if ecy >= scy:
-            start, end = (x, sy1 + GAP), (x, ey0 - GAP)
+            start, end = (scx, sy1 + GAP), (ecx, ey0 - GAP)
         else:
-            start, end = (x, sy0 - GAP), (x, ey1 + GAP)
-        s_focus = (x - scx) / ((sx1 - sx0) / 2 or 1)
-        e_focus = (x - ecx) / ((ex1 - ex0) / 2 or 1)
+            start, end = (scx, sy0 - GAP), (ecx, ey1 + GAP)
+        s_focus = 0.0
+        e_focus = 0.0
     return start, end, s_focus, e_focus
 
 
