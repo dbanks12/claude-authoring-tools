@@ -34,6 +34,14 @@ Dashed stroke is ONLY for elided filler. Never for hashes, preimages, or groupin
 Chips inside signature boxes are miniatures: same fill and stroke as the box they reference,
 with "..." inside array chips.
 
+## Merkle trees and lineage columns
+
+A merkle node or root box is horizontally centered on the midpoint of its children's centers.
+Tree links are angled (child top center to parent bottom center). Everything OUTSIDE the tree
+in a lineage diagram connects vertically: achieve this by moving the SOURCE box (or sliding
+the target member inside its parent) until centers align, never by slanting the connector.
+Frame a tree with a dotted triangle, apex at the root, sides clearing the contents narrowly.
+
 ## Axis 3: weight
 
 strokeWidth 1 by default. strokeWidth 2 only for the traced object's path in a lineage
