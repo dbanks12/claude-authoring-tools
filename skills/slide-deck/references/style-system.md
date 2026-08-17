@@ -22,7 +22,7 @@ Label text color always equals box stroke color.
 | Kind | fillStyle | backgroundColor | strokeStyle | Reading |
 |---|---|---|---|---|
 | Concrete data (preimages, intents, records, signatures, witnesses) | solid | family tint | solid | the value is present here |
-| Hash / commitment (h(n), roots, tree nodes, spongeBlobHash, anchorBlockHash) | cross-hatch | family LIGHT tint | solid | substantial, but woven from other data |
+| Hash / commitment (h(n), roots, tree nodes, spongeBlobHash, anchorBlockHash) | cross-hatch | family light tint (one step deeper when the box sits on a tinted parent, or the hatch vanishes) | solid | substantial, but woven from other data |
 | Nullifier (a hash that kills) | cross-hatch | red tint #ffe3e3 | solid red | hash texture in red, plus the red crack line glyph |
 | Secret / key material (NHK, enclave key) | zigzag | family tint | solid | present but never published |
 | Elided / padding ("...", "0...0", other fields) | none | - | dashed, gray | deliberately insubstantial filler, gray as neutral/supporting |
