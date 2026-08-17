@@ -1,25 +1,34 @@
 #!/usr/bin/env python3
-"""Arrow doctor for the mcp-excalidraw-server canvas.
+"""Connector doctor for the mcp-excalidraw-server canvas.
 
-Why this exists: the canvas server does NOT route arrows. A bound arrow created
-without explicit points is stored with stub geometry ([[0,0],[100,0]]) and the
-routing is delegated to whatever browser tab renders next. Tab writeback then
-races CLI `apply` batches and can collapse arrows to zero length. The cure is to
-never depend on the tab: give every bound arrow explicit edge-to-edge geometry
-whose bindings (focus/gap) agree with it, so the frontend has nothing to re-route.
+Excalidraw `arrow` elements are unusable for precise diagrams here: the browser
+tab re-derives bound-arrow geometry from focus/gap with its own algorithm on
+every render and syncs the result back, so CLI-written arrow geometry never
+survives. Plain `line` elements have no binding machinery and are never touched.
+
+Therefore connectors are LINES with a polyline arrowhead (shaft + two wing
+segments) and the logical link stored in customData.connect = {from, to}.
+The doctor recomputes their geometry from the connected boxes' bboxes.
 
 Usage:
-  python3 arrow_doctor.py --check    # list degenerate / suspicious arrows
-  python3 arrow_doctor.py --fix      # rewrite geometry of every bound arrow
+  python3 arrow_doctor.py --convert  # one-time: replace every `arrow` with a connector line
+  python3 arrow_doctor.py --fix      # re-route all connector lines from their boxes
+  python3 arrow_doctor.py --check    # report degenerate or unlinked connectors
 
-Idempotent. Run --fix after any batch of shape edits, then screenshot.
+Routing: horizontal pairs join at the shorter box's midline. Vertical pairs run
+from the source's edge center to the target's edge center (angled when centers
+differ), which draws Merkle trees correctly. Static lines (no customData.connect)
+are never modified.
 """
 import argparse
 import json
+import math
 import subprocess
 
 CLI = ["npx", "-y", "mcp-excalidraw-server"]
 GAP = 6
+HEAD = 12
+HEAD_ANGLE = math.radians(26)
 
 
 def sh(args, data=None):
@@ -37,90 +46,112 @@ def bbox(e):
     return e["x"], e["y"], e["x"] + (e.get("width") or 0), e["y"] + (e.get("height") or 0)
 
 
-def degenerate(a):
-    pts = a.get("points") or []
-    if len(pts) < 2:
-        return True
-    dx = pts[-1][0] - pts[0][0]
-    dy = pts[-1][1] - pts[0][1]
-    return abs(dx) < 5 and abs(dy) < 5
-
-
 def route(s_el, e_el):
-    """Straight edge-midpoint-to-edge-midpoint segment between two boxes.
-
-    Returns (start_xy, end_xy, s_focus, e_focus) or None for overlapping boxes.
-    Cross-axis attachment targets the centre of the SMALLER extent, clamped into
-    the other box's range, so tall-vs-short pairs get a horizontal arrow at the
-    short box's midline (the `focus` value encodes that offset for Excalidraw).
-    """
     sx0, sy0, sx1, sy1 = bbox(s_el)
     ex0, ey0, ex1, ey1 = bbox(e_el)
     scx, scy = (sx0 + sx1) / 2, (sy0 + sy1) / 2
     ecx, ecy = (ex0 + ex1) / 2, (ey0 + ey1) / 2
-
     horiz_gap = max(ex0 - sx1, sx0 - ex1)
     vert_gap = max(ey0 - sy1, sy0 - ey1)
     if horiz_gap < 0 and vert_gap < 0:
-        return None  # boxes overlap; leave to manual routing
-
-    if horiz_gap >= vert_gap:  # horizontal arrow
+        return None
+    if horiz_gap >= vert_gap:  # horizontal: meet at the shorter box's midline
         y = min(max(scy if (sy1 - sy0) <= (ey1 - ey0) else ecy, max(sy0, ey0)), min(sy1, ey1)) \
             if min(sy1, ey1) > max(sy0, ey0) else (scy + ecy) / 2
         if ecx >= scx:
-            start, end = (sx1 + GAP, y), (ex0 - GAP, y)
-        else:
-            start, end = (sx0 - GAP, y), (ex1 + GAP, y)
-        s_focus = (y - scy) / ((sy1 - sy0) / 2 or 1)
-        e_focus = (y - ecy) / ((ey1 - ey0) / 2 or 1)
-    else:  # vertical arrow: center of source edge to center of target edge (angled when centers differ)
+            return (sx1 + GAP, y), (ex0 - GAP, y)
+        return (sx0 - GAP, y), (ex1 + GAP, y)
+    else:  # vertical: edge center to edge center, angled when centers differ
         if ecy >= scy:
-            start, end = (scx, sy1 + GAP), (ecx, ey0 - GAP)
-        else:
-            start, end = (scx, sy0 - GAP), (ecx, ey1 + GAP)
-        s_focus = 0.0
-        e_focus = 0.0
-    return start, end, s_focus, e_focus
+            return (scx, sy1 + GAP), (ecx, ey0 - GAP)
+        return (scx, sy0 - GAP), (ecx, ey1 + GAP)
+
+
+def polyline(points):
+    """Relative points list -> same list with arrowhead wings appended at the tip."""
+    (px, py), (tx, ty) = points[-2], points[-1]
+    dx, dy = tx - px, ty - py
+    L = math.hypot(dx, dy) or 1
+    ux, uy = dx / L, dy / L
+    c, s = math.cos(HEAD_ANGLE), math.sin(HEAD_ANGLE)
+    w1 = [tx - HEAD * (ux * c - uy * s), ty - HEAD * (ux * s + uy * c)]
+    w2 = [tx - HEAD * (ux * c + uy * s), ty - HEAD * (-ux * s + uy * c)]
+    return points + [w1, [tx, ty], w2]
+
+
+def connector_element(cid, start, end, style, from_id=None, to_id=None, mid_points=None):
+    sx, sy = start
+    rel = [[0, 0]] + [[mx - sx, my - sy] for (mx, my) in (mid_points or [])] + [[end[0] - sx, end[1] - sy]]
+    e = {"id": cid, "type": "line", "x": sx, "y": sy, "points": polyline(rel),
+         "strokeColor": style.get("strokeColor", "#1e1e1e"),
+         "strokeWidth": style.get("strokeWidth", 1)}
+    if style.get("strokeStyle"):
+        e["strokeStyle"] = style["strokeStyle"]
+    if from_id and to_id:
+        e["customData"] = {"connect": {"from": from_id, "to": to_id}}
+    return e
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fix", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--convert", action="store_true")
     args = ap.parse_args()
-
     els = scene()
-    arrows = [e for e in els.values() if e.get("type") == "arrow"]
+
+    if args.convert:
+        arrows = [e for e in els.values() if e.get("type") == "arrow"]
+        creates, deletes = [], []
+        for a in arrows:
+            style = {k: a.get(k) for k in ("strokeColor", "strokeStyle", "strokeWidth")}
+            sb = (a.get("startBinding") or {}).get("elementId")
+            eb = (a.get("endBinding") or {}).get("elementId")
+            deletes.append(a["id"])
+            if sb in els and eb in els:
+                r = route(els[sb], els[eb])
+                if r:
+                    creates.append(connector_element(a["id"], r[0], r[1], style, sb, eb))
+                    continue
+            pts = a.get("points") or [[0, 0], [50, 0]]
+            abs_pts = [(a["x"] + p[0], a["y"] + p[1]) for p in pts]
+            creates.append(connector_element(a["id"], abs_pts[0], abs_pts[-1], style,
+                                             mid_points=[list(p) for p in abs_pts[1:-1]]))
+        sh(["apply"], json.dumps({"delete": deletes}))
+        sh(["apply"], json.dumps({"create": creates}))
+        print(f"converted {len(creates)} arrows to connector lines")
+        return
+
+    connectors = [e for e in els.values()
+                  if e.get("type") == "line" and (e.get("customData") or {}).get("connect")]
     updates, report = [], []
-    for a in arrows:
-        sb, eb = a.get("startBinding") or {}, a.get("endBinding") or {}
-        s_el, e_el = els.get(sb.get("elementId")), els.get(eb.get("elementId"))
-        if degenerate(a):
-            report.append(f"DEGENERATE {a['id']}")
+    for c in connectors:
+        link = c["customData"]["connect"]
+        s_el, e_el = els.get(link["from"]), els.get(link["to"])
         if not (s_el and e_el):
-            if not (sb or eb):
-                report.append(f"UNBOUND    {a['id']} (will collapse eventually; bind it)")
+            report.append(f"ORPHAN     {c['id']} -> {link}")
             continue
         r = route(s_el, e_el)
         if r is None:
-            report.append(f"OVERLAP    {a['id']} ({s_el['id']} / {e_el['id']}), skipped")
+            report.append(f"OVERLAP    {c['id']}")
             continue
-        (sx, sy), (ex, ey), sf, ef = r
-        updates.append({"id": a["id"], "set": {
-            "x": sx, "y": sy,
-            "points": [[0, 0], [ex - sx, ey - sy]],
-            "width": abs(ex - sx), "height": abs(ey - sy),
-            "startBinding": {"elementId": s_el["id"], "focus": round(sf, 3), "gap": GAP},
-            "endBinding": {"elementId": e_el["id"], "focus": round(ef, 3), "gap": GAP},
+        (sx, sy), (ex, ey) = r
+        pts = polyline([[0, 0], [ex - sx, ey - sy]])
+        updates.append({"id": c["id"], "set": {
+            "x": sx, "y": sy, "points": pts,
+            "width": max(p[0] for p in pts) - min(p[0] for p in pts),
+            "height": max(p[1] for p in pts) - min(p[1] for p in pts),
         }})
-
+    for e in els.values():
+        if e.get("type") == "arrow":
+            report.append(f"RAW ARROW  {e['id']} (run --convert)")
     for line in report:
         print(line)
     if args.fix and updates:
         sh(["apply"], json.dumps({"update": updates}))
-        print(f"rewrote geometry of {len(updates)} bound arrows")
+        print(f"re-routed {len(updates)} connector lines")
     elif args.check:
-        print(f"{len(arrows)} arrows, {len(updates)} bound and reroutable")
+        print(f"{len(connectors)} connectors, {len(updates)} routable")
 
 
 if __name__ == "__main__":
