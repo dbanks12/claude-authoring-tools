@@ -25,7 +25,7 @@ Label text color always equals box stroke color.
 | Hash / commitment (h(n), roots, tree nodes, spongeBlobHash, anchorBlockHash) | cross-hatch | family LIGHT tint | solid | substantial, but woven from other data |
 | Nullifier (a hash that kills) | cross-hatch | red tint #ffe3e3 | solid red | hash texture in red, plus the red crack line glyph |
 | Secret / key material (NHK, enclave key) | zigzag | family tint | solid | present but never published |
-| Elided / padding ("...", "0...0", other fields) | hachure | #dee2e6 | dashed | deliberately insubstantial filler |
+| Elided / padding ("...", "0...0", other fields) | none | - | dashed, gray | deliberately insubstantial filler, gray as neutral/supporting |
 | Container / parent (titled field groupings) | none | - | solid | structural border |
 | Zone / phase / bundle / tree frame (conceptual groupings) | none | - | dotted | a mental grouping, not an object |
 | Critical gate (AND, freeze, reject) | solid | red tint | solid, width 2 | loud on purpose |
