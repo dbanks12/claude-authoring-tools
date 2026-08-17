@@ -23,6 +23,15 @@ browser tab. Diagram crops are produced with Pillow
 
 ## Installing the skills
 
-Copy (or symlink) each skill directory into `~/.claude/skills/` so Claude Code picks them up:
+Symlink each skill directory so this repo stays the single source of truth:
 
-    cp -r skills/slide-deck skills/excalidraw-skill ~/.claude/skills/
+    # Claude Code
+    ln -s $(pwd)/skills/slide-deck $(pwd)/skills/excalidraw-skill ~/.claude/skills/
+    # Codex (same SKILL.md format, native support)
+    ln -s $(pwd)/skills/slide-deck $(pwd)/skills/excalidraw-skill ~/.codex/skills/
+
+For Codex also register the canvas MCP server (optional, the CLI works without it):
+
+    codex mcp add excalidraw -- npx -y mcp-excalidraw-server
+
+Agent-specific adaptations live in `AGENTS.md` (which `CLAUDE.md` symlinks to).
