@@ -41,6 +41,10 @@ Tree links are angled (child top center to parent bottom center). Everything OUT
 in a lineage diagram connects vertically: achieve this by moving the SOURCE box (or sliding
 the target member inside its parent) until centers align, never by slanting the connector.
 Frame a tree with a dotted triangle, apex at the root, sides clearing the contents narrowly.
+Trees are always incomplete: leave intermediate nodes UNLABELED, draw the links that skip
+elided levels as dashed, and place a vertical ellipsis (three stacked periods, the hand font
+has no vertical-ellipsis glyph) in the tree's center between the top nodes and the root.
+Horizontal "..." outside the last leaf and last node mark elided siblings.
 
 ## Axis 3: weight
 
