@@ -31,6 +31,8 @@ Label text color always equals box stroke color.
 | Critical gate (AND, freeze, reject) | solid | red tint | solid, width 2 | loud on purpose |
 
 Dashed stroke is ONLY for elided filler. Never for hashes, preimages, or groupings.
+A cross-hatch backgroundColor must be a very light tint of the SAME family as the stroke,
+never borrowed from another family. One tint per family, identical everywhere on the canvas.
 Chips inside signature boxes are miniatures: same fill and stroke as the box they reference,
 with "..." inside array chips.
 
