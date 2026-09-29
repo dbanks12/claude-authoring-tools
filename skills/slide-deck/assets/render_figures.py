@@ -46,6 +46,8 @@ def intersects(e, box, pad=4):
 
 def scaled(e, k):
     c = copy.deepcopy(e)
+    # the server writes invalid fractional indices (a0, a10, a34), which can blank the export
+    c.pop("index", None)
     for f in ("x", "y", "width", "height", "fontSize", "strokeWidth"):
         if isinstance(c.get(f), (int, float)):
             c[f] = c[f] * k
@@ -74,6 +76,8 @@ def main():
     k = float(sys.argv[sys.argv.index("--scale") + 1]) if "--scale" in sys.argv else 2.5
 
     original = sh(["export"])
+    for e in original["elements"]:
+        e.pop("index", None)  # restore without the invalid indices too
     els = [e for e in original["elements"] if not e.get("isDeleted")]
     backup = Path(tempfile.mkstemp(suffix=".excalidraw")[1])
     backup.write_text(json.dumps(original))

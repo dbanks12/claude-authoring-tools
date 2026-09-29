@@ -1,0 +1,56 @@
+# Copy to <deck repo>/.github/workflows/deck.yml. See skills/slide-deck/README-ci.md.
+# Builds the deck at the repo root to HTML and PDF on every push and PR.
+# Pushes to main also refresh the "latest" release with both files.
+# Needs the secret SLIDEGEN_DEPLOY_KEY: a read-only deploy key for the private tool repo.
+name: deck
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the slidegen submodule
+        env:
+          KEY: ${{ secrets.SLIDEGEN_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/slidegen && chmod 600 ~/.ssh/slidegen
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/slidegen -o IdentitiesOnly=yes" git submodule update --init --depth 1 slidegen
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install fonts
+        run: sudo apt-get install -y --no-install-recommends fonts-liberation
+
+      - name: Build HTML and PDF
+        run: slidegen/skills/slide-deck/assets/ci-build.sh .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deck
+          path: |
+            *.html
+            *.pdf
+
+      - name: Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest --target "$GITHUB_SHA" \
+            --title "Deck (latest)" --notes "Built from $GITHUB_SHA." \
+            ./*.html ./*.pdf

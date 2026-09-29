@@ -1,0 +1,48 @@
+# Builds examples/demo-deck to HTML and PDF on every push and PR.
+# Pushes to master also refresh the "example-latest" release.
+# Deck repos use the same steps: see skills/slide-deck/ci/deck.yml.
+name: example deck
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DECK: examples/demo-deck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install fonts
+        run: sudo apt-get install -y --no-install-recommends fonts-liberation
+
+      - name: Build HTML and PDF
+        run: skills/slide-deck/assets/ci-build.sh "$DECK"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-deck
+          path: |
+            ${{ env.DECK }}/*.html
+            ${{ env.DECK }}/*.pdf
+
+      - name: Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete example-latest --cleanup-tag --yes || true
+          gh release create example-latest --target "$GITHUB_SHA" \
+            --title "Example deck (latest)" --notes "Built from $GITHUB_SHA." \
+            "$DECK"/*.html "$DECK"/*.pdf

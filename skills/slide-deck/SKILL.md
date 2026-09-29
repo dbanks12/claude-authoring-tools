@@ -9,14 +9,25 @@ Distill a document or topic into a minimal HTML slide deck plus an Excalidraw he
 
 ## Source-file workflow (do this, never hand-edit HTML)
 
-The deck is generated, not authored, so the user always has a human-readable file to edit. Set up a deck directory (e.g. `~/<name>-deck/`) with:
+The deck is generated, not authored, so the user always has a human-readable file to edit. A deck directory (e.g. `~/<name>-deck/`, ideally its own private repo) holds only content:
 
 - `slides.md` - the single source of truth the user edits
 - `figures/fig-<name>.png` - the diagram crops as plain files
-- `build.py` and `template.html` - copy both from this skill's `assets/` directory
-- `python3 build.py` assembles `<deck>.html` with figures inlined as data URIs; publish that output as the artifact (pass `url:` to keep an existing artifact URL when the output path changes)
+- `canvas/` - optional: the `.excalidraw` file and a `diagrams.py` that draws the diagrams as code with `assets/draw.py`
+- `slidegen/` - this tool repo as a git submodule (in a repo) - never copy the scripts into the deck
 
-`slides.md` format, one slide per `---`-separated block (build.py automatically maintains this same reference as an HTML comment at the top of slides.md, so the user always has it in front of them while editing):
+The scripts in `assets/` take the deck directory as their argument (default: the current directory):
+
+- `build.py DECK` assembles `DECK/<dirname>.html` with figures inlined as data URIs; publish that output as the artifact (pass `url:` to keep an existing artifact URL when the output path changes)
+- `pdf.py DECK` renders that HTML to a 16:9 PDF, one slide per page (headless Chromium)
+- `watch.py DECK` rebuilds both on every save; `ci-build.sh DECK` is one build exactly as CI runs it
+- `trim.py FIGURES_DIR [names]` trims figure PNGs to their ink after `render_figures.py`
+
+CI and releases for deck repos: follow `README-ci.md` (submodule, workflow template in `ci/deck.yml`, read-only deploy key). `examples/demo-deck` in this repo shows every slides.md feature and runs the same pipeline.
+
+Without an Artifact tool (Codex, for example), skip every publish step and open `<deck>.html` locally. Without a session scratchpad, use a deck-local `tmp/`. The canvas works through the CLI or the MCP tools; see the excalidraw-skill.
+
+`slides.md` format, one slide per `---`-separated block. The full, current reference is `SYNTAX_HEADER` in `assets/build.py`, which build.py also keeps as a comment at the top of every slides.md. It adds file-wide settings (`bullets: plain`, `titles: top`), sub-bullets, `{red: }`/`{green: }` text, `||` column splits, and figure modes (`fig: name` fills the slide, `natural`, `mega`). The basics:
 
 ```
 # Title                slide title (first slide renders extra large)
@@ -30,7 +41,7 @@ bullets: plain         switches all "- " lists on this slide to regular disc bul
 plain text             paragraph; -> becomes a right arrow
 ```
 
-After any canvas edit: re-crop into `figures/`, rebuild, republish. After any user edit to `slides.md`: rebuild, republish. The template carries the whole theme and the settle-navigation script; deck-specific changes to chrome belong in the deck's own `template.html` copy, and improvements that should apply to all future decks belong in `assets/template.html` here.
+After any canvas edit: re-crop into `figures/`, rebuild, republish. After any user edit to `slides.md`: rebuild, republish. The template carries the whole theme and the settle-navigation script. A deck may override it with its own `template.html`; improvements that should apply to all decks belong in `assets/template.html` here. The page `<title>` comes from the first slide.
 
 ## Deck structure
 
