@@ -39,7 +39,7 @@ Distilled from iterating on the oxide and SIPA canvases. Short rules for future 
 
 - Arrows exist to physically connect boxes. An arrow that floats, shrinks, or points at a corner is a bug.
 - Connect at edge midpoints when sensible. Tall-to-short pairs get a horizontal arrow at the short box's midline.
-- New diagrams: bound arrows, or the layout.mjs pipeline. Connector-line canvases: arrow_doctor after every batch.
+- New diagrams: bound arrows, or the place.py helper. Connector-line canvases: arrow_doctor after every batch.
 
 ## Text, labels, notation
 

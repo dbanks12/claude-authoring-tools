@@ -4,7 +4,7 @@
     {
       "id": 0,
       "prompt": "A PR replaces direct database writes in the orders API handler (src/api/orders.ts) with a new RetryQueue (src/queue/retry.ts) that writes to Postgres and retries failures. Draw a diagram for the PR description.",
-      "expected_output": "A four-line brief whose claim mentions write ordering or retries. One code-change diagram with a title, laid out from a spec with layout.mjs: 3-5 nodes, RetryQueue and its edges green, the old handler-to-Postgres edge red dashed, untouched nodes gray, file paths as node subtitles, verb-first arrow labels. lint_diagram.py passes. A written squint/remove/claim critique of the headless render.",
+      "expected_output": "A four-line brief whose claim mentions write ordering or retries. One code-change diagram with a title, placed with place.py: 3-5 nodes, RetryQueue and its edges green, the old handler-to-Postgres edge red dashed, untouched nodes gray, file paths as node subtitles, verb-first arrow labels. lint_diagram.py passes. A written squint/remove/claim critique of the headless render.",
       "files": []
     },
     {
@@ -22,13 +22,25 @@
     {
       "id": 3,
       "prompt": "Explain with a diagram how a request flows through our service: client -> nginx -> api (validates the token with auth-svc) -> postgres, and api publishes an audit event to kafka that the audit-worker consumes.",
-      "expected_output": "An overview (at most 7 boxes) and a deep dive to its right that reuses the overview's names and colors. The main request path runs on one row, with auth-svc, kafka, and audit-worker as side branches. Titles, colors by kind, labeled arrows, no crossings, and each panel passes lint with --box.",
+      "expected_output": "One diagram, not an overview plus deep dive: 7 boxes fit. The main request path runs on one row, with auth-svc, kafka, and audit-worker as side branches. A title, colors by kind, labeled arrows, no crossings, and lint passes.",
       "files": []
     },
     {
       "id": 4,
       "prompt": "Using only the CLI, draw two labeled boxes ('Client', 'Server') connected by an arrow, then save the diagram into an Obsidian vault at /tmp/vault/diagrams/flow.excalidraw.md (assume /tmp/vault/.obsidian exists; create the diagrams folder if needed). Clear the canvas and re-import the saved file. Confirm the saved file is in the Obsidian Excalidraw plugin's markdown format (frontmatter + '# Excalidraw Data' + a '## Drawing' code block) rather than raw JSON, and that both boxes are back on the canvas after the re-import.",
       "expected_output": "flow.excalidraw.md written in the Obsidian new format (not raw .excalidraw JSON), format markers verified by reading the file, and the canvas restored with both labeled boxes and their arrow after `import --replace`.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Draw the architecture of a service with a web client, an API gateway, five backend services (auth, orders, payments, inventory, notifications), Postgres, Redis, and a Kafka bus that orders, payments, and notifications use.",
+      "expected_output": "Two separate diagrams, each exported and rendered to its own file: an overview of at most 7 boxes (client, gateway, services as one group, data stores, Kafka), then a deep dive of every service that keeps the overview's names, colors, and relative positions. Each has a title and passes lint on its own.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Draw a decision tree for choosing a database: relational data with joins goes to Postgres; otherwise, key lookups under 1 ms go to Redis; otherwise, large documents go to MongoDB.",
+      "expected_output": "One diagram. Questions in smooth diamonds (roughness 0), answers on the arrows, outcomes in colored boxes, and diagonal parent-to-child edges that read as a tree. Lint passes.",
       "files": []
     }
   ]

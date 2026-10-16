@@ -7,7 +7,8 @@ Usage:
   python3 lint_diagram.py scene.excalidraw --box 0,0,900,400   (one diagram on a shared canvas)
 
 A node is a shape with a label. A zone is a shape without one. A text element
-whose id is "<element id>-label" labels that element (layout.mjs writes these).
+whose id is "<element id>-label" labels that element (place.py writes these). Name a
+zone or panel title "<id>-title", never "<id>-label".
 Free text (titles, rules panels, notes) has no word limit. Raise a limit with a flag
 only when the brief says why.
 """
@@ -64,6 +65,17 @@ def through(seg, box, pad=4):
     inside = lambda p: x0 < p[0] < x1 and y0 < p[1] < y1  # noqa: E731
     sides = [((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))]
     return inside(seg[0]) or inside(seg[1]) or any(meet(seg, side) for side in sides)
+
+
+def text_box(t):
+    """Rendered bounds of left-aligned free text: about 0.52 x fontSize per character."""
+    lines = t["text"].split("\n")
+    return (t["x"], t["y"], t["x"] + max(map(len, lines)) * 0.52 * t["fontSize"],
+            t["y"] + len(lines) * 1.25 * t["fontSize"])
+
+
+def overlap(a, b, pad=2):
+    return a[0] < b[2] - pad and b[0] + pad < a[2] and a[1] < b[3] - pad and b[1] + pad < a[3]
 
 
 def near(pt, box, gap=16):
@@ -152,6 +164,19 @@ def main():
                 continue  # an endpoint box
             if any(through(s, box) for s in zip(pts, pts[1:])):
                 fails.append(f"{eid} passes through {n['id']}")
+        for t in texts:
+            if t.get("containerId"):
+                continue
+            if any(through(s, text_box(t), pad=2) for s in zip(pts, pts[1:])):
+                fails.append(f"{eid} runs through text {t['id']}. Move the text off the line.")
+
+    for t in texts:
+        if t.get("containerId"):
+            continue
+        tb = text_box(t)
+        for n in nodes:
+            if overlap(tb, bbox(n)):
+                fails.append(f"text {t['id']} overlaps {n['id']}. Move it, or shorten the arrow's label.")
 
     for line in fails:
         print("FAIL ", line)
