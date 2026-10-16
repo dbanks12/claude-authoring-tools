@@ -5,10 +5,10 @@ Distilled from iterating on the oxide and SIPA canvases. Short rules for future 
 ## Structure
 
 - Keep each diagram minimal and simple. 3-8 boxes. Split into more diagrams before making one dense.
-- Make the diagram itself carry the explanation. Checks, conditions, and steps go inside the picture (dashed sub-boxes under the actor), not as caption prose below.
-- When a process has a real conceptual split, draw it as named phases (e.g. audit the PAST vs constrain the PRESENT), each phase its own colored dashed card.
+- Make the diagram itself carry the explanation. Checks, conditions, and steps go inside the picture (dotted sub-boxes under the actor), not as caption prose below.
+- When a process has a real conceptual split, draw it as named phases (e.g. audit the PAST vs constrain the PRESENT), each phase its own colored dotted card.
 - Order members to match reality: fields in digest order, data in structure order, outputs in dependency order (the lists a signature references come before the signature).
-- Group actors or components into labeled zones (dashed border, small uppercase corner label) when they belong to distinct subsystems.
+- Group actors or components into labeled zones (dotted border, small uppercase corner label) when they belong to distinct subsystems.
 - Zoom-in diagrams must look visually reminiscent of the mini version they expand: same background fill, same colors, same idioms, just bigger boxes with room for text.
 - Drill down a level or two when asked for internals: one diagram per inner algorithm, not one mega chart.
 
@@ -16,7 +16,7 @@ Distilled from iterating on the oxide and SIPA canvases. Short rules for future 
 
 - Represent each item (note, nullifier, signature, deposit) as its own mini box. Never a prose list where boxes could show cardinality.
 - Wrap related items in a parent box titled with the field name. Sibling parent boxes get the same width.
-- An item with attached aux data becomes a bundle: the item mini box plus its aux lines, inside a dashed bundle border. Reuse the idiom everywhere it applies.
+- An item with attached aux data becomes a bundle: the item mini box plus its aux lines, inside a dotted bundle border. Reuse the idiom everywhere it applies.
 - Sibling boxes and chips must match size exactly (width, height, title font size). If one gets hand-resized, propagate to all siblings.
 - Inner boxes must fit inside their parents with visible margins. Widen the parent rather than let children spill.
 - Uniform row heights within one diagram. Boxes with less content get taller rather than breaking the grid.
@@ -26,7 +26,7 @@ Distilled from iterating on the oxide and SIPA canvases. Short rules for future 
 ## Color and coding
 
 - One shared color language per canvas. Same concept, same color, everywhere.
-- Solid box = a thing. Dashed box = a hash of a thing. Red crack through a box = a nullifier or kill.
+- Solid box = a thing. Cross-hatch box = a hash of a thing. Red crack through a box = a nullifier or kill. Dashed is only for elided filler (see style-system.md).
 - Related input and output items share hue (deposit d1 green, its nullifier nf(d1) green with crack).
 - Give a distinct concept its own unique color (anchorBlockHash teal) and keep it identical between full box and chip.
 - Chips are miniature color-coded references to other boxes: same fill and dash style as the box they reference. Arrays get "..." inside, scalars do not.
@@ -39,7 +39,7 @@ Distilled from iterating on the oxide and SIPA canvases. Short rules for future 
 
 - Arrows exist to physically connect boxes. An arrow that floats, shrinks, or points at a corner is a bug.
 - Connect at edge midpoints when sensible. Tall-to-short pairs get a horizontal arrow at the short box's midline.
-- Bound arrows plus arrow_doctor after every batch. Never raw-point unbound arrows.
+- New diagrams: bound arrows, or the layout.mjs pipeline. Connector-line canvases: arrow_doctor after every batch.
 
 ## Text, labels, notation
 
@@ -76,7 +76,7 @@ Already covered there: color language basics, checks-inside-picture, bound arrow
 Not yet reflected, worth folding:
 
 - Prefix semantics: "+" aux, "=" definition, bare property.
-- Solid = thing, dashed = hash, red crack = nullifier, chip = miniature reference with "..." for arrays.
+- Solid = thing, cross-hatch = hash, red crack = nullifier, chip = miniature reference with "..." for arrays.
 - Bundle idiom for item plus aux data.
 - Sibling uniformity rules (widths, heights, chip sizes, title font sizes) and propagate-user-resizes.
 - Order members to match reality, outputs in dependency order.

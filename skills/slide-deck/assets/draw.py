@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # arrow_doctor.py sits next to this file
 from arrow_doctor import connector_element, route  # noqa: E402
 
-CLI = ["npx", "-y", "mcp-excalidraw-server"]
+CLI = ["npx", "-y", "mcp-excalidraw-server@2.1.2"]
 
 # hue families (AVM mapping of the style system)
 FAM = {
@@ -48,7 +48,7 @@ class D:
     def id(self, n):
         return f"{self.key}-{n}"
 
-    def box(self, n, x, y, w, h, text="", fam="gray", kind="data", fs=16, sw=1, sharp=False, fill=None):
+    def box(self, n, x, y, w, h, text="", fam="gray", kind="data", fs=16, sw=1, sharp=True, fill=None):
         """w=None sizes the box to its label (32px side padding, min 120).
         fill overrides the family tint of a data box."""
         fs = round(fs * self.scale)

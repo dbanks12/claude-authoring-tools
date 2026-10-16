@@ -1,5 +1,8 @@
 # Canvas style system
 
+These families cover domain diagrams. Code-change diagrams use only the palette in
+`../../excalidraw-skill/SKILL.md` section 6.
+
 Two orthogonal axes. Hue says which domain family a box belongs to. Texture (fill style plus
 stroke style) says what kind of thing it is. Any box reads as (family, kind).
 
