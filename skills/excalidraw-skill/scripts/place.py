@@ -129,14 +129,18 @@ class Diagram:
             cx, cy = self._center(e)
             return ("r" if toward[0] > cx else "l") if horiz else ("b" if toward[1] > cy else "t")
 
+        def facing(e, p):  # the face that sees point p, scaled by the shape's own width and height
+            cx, cy = self._center(e)
+            return side(e, p, abs(p[0] - cx) / e["width"] >= abs(p[1] - cy) / e["height"])
+
         if r["via"]:
-            return (side(s, first, abs(first[0] - scx) >= abs(first[1] - scy)),
-                    side(t, last, abs(last[0] - tcx) >= abs(last[1] - tcy)))
+            return facing(s, first), facing(t, last)
         # Side by side (rows overlap) or mostly sideways: join the facing sides.
         # Otherwise join bottom to top, which draws trees with diagonal edges.
         rows_overlap = s["y"] < t["y"] + t["height"] and t["y"] < s["y"] + s["height"]
         horizontal = rows_overlap or abs(tcx - scx) > 2 * abs(tcy - scy)
-        if r["route"] == "elbow":
+        cols_overlap = s["x"] < t["x"] + t["width"] and t["x"] < s["x"] + s["width"]
+        if r["route"] == "elbow" and not rows_overlap and not cols_overlap:
             return side(s, (tcx, tcy), horizontal), side(t, (scx, scy), not horizontal)
         return side(s, (tcx, tcy), horizontal), side(t, (scx, scy), horizontal)
 
@@ -145,13 +149,15 @@ class Diagram:
         uses = {}
         for i, r in enumerate(self.arrows):
             sa, sb = self._sides(r)
-            uses.setdefault((r["a"], sa), []).append((i, 0, r["b"]))
-            uses.setdefault((r["b"], sb), []).append((i, 1, r["a"]))
+            far_a = r["via"][0] if r["via"] else self._center(self.shapes[r["b"]])
+            far_b = r["via"][-1] if r["via"] else self._center(self.shapes[r["a"]])
+            uses.setdefault((r["a"], sa), []).append((i, 0, far_a))
+            uses.setdefault((r["b"], sb), []).append((i, 1, far_b))
         ports = {}
         for (name, side), ends in uses.items():
             e = self.shapes[name]
             along_x = side in "tb"
-            ends.sort(key=lambda u: self._center(self.shapes[u[2]])[0 if along_x else 1])
+            ends.sort(key=lambda u: u[2][0 if along_x else 1])
             for k, (i, end, _) in enumerate(ends):
                 f = (k + 1) / (len(ends) + 1)
                 if side == "l":
@@ -176,7 +182,7 @@ class Diagram:
             p0, p1 = ports[(i, 0)], ports[(i, 1)]
             if r["via"]:
                 pts = [p0, *r["via"], p1]
-            elif r["route"] == "elbow":
+            elif (self._sides(r)[0] in "lr") != (self._sides(r)[1] in "lr"):  # elbow: one corner
                 corner = (p1[0], p0[1]) if self._sides(r)[0] in "lr" else (p0[0], p1[1])
                 pts = [p0, corner, p1]
             else:
@@ -188,16 +194,18 @@ class Diagram:
                              "strokeStyle": "dashed" if r["dashed"] else dash,
                              "customData": {"from": self.id(r["a"]), "to": self.id(r["b"])}})
             if r["label"]:
-                self._label(r["name"], pts, r["label"], stroke)
+                twins = [j for j, o in enumerate(self.arrows) if j != i and {o["a"], o["b"]} == {r["a"], r["b"]}]
+                outside = any(ports[(j, 0)][1] + ports[(j, 1)][1] < p0[1] + p1[1] for j in twins)  # a twin runs above
+                self._label(r["name"], pts, r["label"], stroke, below=outside)
 
-    def _label(self, aid, pts, label, color, fs=16):
+    def _label(self, aid, pts, label, color, fs=16, below=False):
         (ax, ay), (bx, by) = max(zip(pts, pts[1:]), key=lambda s: abs(s[1][0] - s[0][0]) + abs(s[1][1] - s[0][1]))
         w, h = text_size(label, fs)
         mx, my = (ax + bx) / 2, (ay + by) / 2
         dx, dy = bx - ax, by - ay
         if abs(dx) >= abs(dy):  # mostly sideways: centered above the line where it runs highest under the label
             slope = abs(dy / dx) if dx else 0
-            x, y = mx - w / 2, my - slope * w / 2 - h - 6
+            x, y = mx - w / 2, (my + slope * w / 2 + 6) if below else (my - slope * w / 2 - h - 6)
         else:  # mostly vertical: beside the line, clear of it across the label's height
             run = abs(dx / dy) * h / 2
             x = mx + run + 10 if dx * dy >= 0 else mx - run - w - 10
