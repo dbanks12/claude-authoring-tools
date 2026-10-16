@@ -23,7 +23,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops
 
-CLI = ["npx", "-y", "mcp-excalidraw-server"]
+CLI = ["npx", "-y", "mcp-excalidraw-server@2.1.2"]
 SYNC_SECONDS = 3
 
 

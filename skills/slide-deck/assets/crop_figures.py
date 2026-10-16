@@ -16,7 +16,7 @@ import sys
 
 from PIL import Image
 
-CLI = ["npx", "-y", "mcp-excalidraw-server"]
+CLI = ["npx", "-y", "mcp-excalidraw-server@2.1.2"]
 
 
 def scene_bbox():

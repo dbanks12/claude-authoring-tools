@@ -6,8 +6,8 @@ read and follow them directly:
 
 - `skills/slide-deck/SKILL.md` - deck structure, slides.md source format, build workflow,
   theme, canvas conventions, crop pipeline, and hard-won gotchas (arrows, bound labels).
-- `skills/excalidraw-skill/SKILL.md` - canvas server interfaces, element format, layout
-  rules, iterative refinement workflow.
+- `skills/excalidraw-skill/SKILL.md` - what to draw, budgets, ELK layout, lint, and critique.
+  Its `references/mechanics.md` covers canvas interfaces and the element format.
 
 ## Adaptations for non-Claude agents (Codex etc.)
 

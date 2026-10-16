@@ -25,7 +25,7 @@ import json
 import math
 import subprocess
 
-CLI = ["npx", "-y", "mcp-excalidraw-server"]
+CLI = ["npx", "-y", "mcp-excalidraw-server@2.1.2"]
 GAP = 6
 HEAD = 12
 HEAD_ANGLE = math.radians(26)
