@@ -7,13 +7,14 @@
 //
 // Spec:
 // {
+//   "title": "Subject and scope",            drawn at the top left
 //   "direction": "RIGHT" | "DOWN",           default RIGHT
 //   "origin": [x, y],                        default [0, 0]
 //   "nodes":  [{"id", "label", "sub"?, "fam"?, "change"?}],
-//   "edges":  [{"from", "to", "label"?, "change"?, "dashed"?}],
+//   "edges":  [{"from", "to", "label"?, "fam"?, "change"?, "dashed"?}],
 //   "groups": [{"id", "label", "members": [node ids]}]
 // }
-// fam: gray | blue | green | orange | purple | red | teal (default gray)
+// fam: gray | blue | green | orange | purple | red | teal (nodes default gray, edges ink)
 // change: added | changed | removed | context (overrides fam)
 import { readFileSync } from "node:fs";
 import ELK from "elkjs/lib/elk.bundled.js";
@@ -44,7 +45,9 @@ const style = (item) =>
   CHANGE[item.change] ?? [...(FAM[item.fam ?? "gray"] ?? FAM.gray), "solid"];
 
 const spec = JSON.parse(readFileSync(process.argv[2] ?? 0, "utf8"));
-const [ox, oy] = spec.origin ?? [0, 0];
+const [x0, y0] = spec.origin ?? [0, 0];
+const TITLE_H = spec.title ? 60 : 0;
+const [ox, oy] = [x0, y0 + TITLE_H];
 const groupOf = {};
 for (const g of spec.groups ?? []) for (const m of g.members) groupOf[m] = g.id;
 
@@ -83,6 +86,8 @@ const graph = {
 
 const out = await new ELK().layout(graph);
 const els = [];
+if (spec.title) els.push({ id: `${spec.nodes[0].id}-title`, type: "text", x: x0, y: y0, text: spec.title,
+  fontSize: 28, strokeColor: "#1e1e1e", textAlign: "left", verticalAlign: "top" });
 const nodes = Object.fromEntries(spec.nodes.map((n) => [n.id, n]));
 
 for (const top of out.children) {
@@ -117,7 +122,7 @@ for (const top of out.children) offset[top.id] = [top.x, top.y];
   const at = (p) => [ox + cx + p.x, oy + cy + p.y];
   const sec = oe.sections[0];
   const pts = [sec.startPoint, ...(sec.bendPoints ?? []), sec.endPoint].map(at);
-  const [stroke, , strokeStyle] = e.change ? style(e) : ["#1e1e1e", null, "solid"];
+  const [stroke, , strokeStyle] = e.change || e.fam ? style(e) : ["#1e1e1e", null, "solid"];
   // Unbound arrows keep ELK's routed points. The server would re-route a bound one.
   const id = `${e.from}--${e.to}--${i}`;
   els.push({ id, type: "arrow", x: pts[0][0], y: pts[0][1],
