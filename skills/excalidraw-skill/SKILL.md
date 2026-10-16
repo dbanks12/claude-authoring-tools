@@ -81,7 +81,11 @@ For any boxes-and-arrows diagram, write a graph spec and let ELK place it. One-t
 node <skill>/scripts/layout.mjs spec.json | npx -y mcp-excalidraw-server@2.1.2 add
 ```
 
-The header of `scripts/layout.mjs` lists every spec field. Use `"direction": "RIGHT"` for flows and pipelines, and `"DOWN"` for layers. Use `"origin": [x, y]` to place a diagram on a shared canvas. Use a group only for a real boundary: a process, a package, a trust zone.
+The header of `scripts/layout.mjs` lists every spec field. Use `"direction": "RIGHT"` for flows and pipelines, and `"DOWN"` for layers. Use a group only for a real boundary: a process, a package, a trust zone.
+
+On a shared canvas, set `"origin": [x, y]` and give every node and group id a diagram prefix (`optA-api`, `optB-api`). Element ids derive from them, and a repeated id replaces the earlier element.
+
+For a style-system texture (cross-hatch hash, zigzag secret), lay out first, then `update <id> --set '{"fillStyle": "cross-hatch"}'`.
 
 To change the diagram, edit the spec. Delete the old elements (`query --bbox x0,y0,x1,y1`, then `delete` those ids), and rerun. ELK is deterministic, so an unchanged graph keeps its positions.
 
