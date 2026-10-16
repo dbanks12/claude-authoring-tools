@@ -9,7 +9,7 @@ A diagram earns its place when a cold reader sees a mechanism faster than prose 
 
 Canvas mechanics (CLI, element format, arrows, snapshots, file I/O, errors) live in `references/mechanics.md`. Read it before the first canvas command in a session. Use `npx -y mcp-excalidraw-server@2.1.2` or later; screenshots and `render` work headless, with no browser tab.
 
-## 1. Decide whether to draw
+## 1. Decide what to draw
 
 Pick the type from the reader's question:
 
@@ -22,10 +22,15 @@ Pick the type from the reader's question:
 | What did this change do? | Code change, one layout (see section 6) |
 | Which of two designs? | Same layout twice, with the differing edge in the accent color |
 | What states can this be in? | State machine |
+| What should I do in my case? | Decision tree: questions as diamonds or boxes, answers on the arrows |
 
-When the claim has no spatial relationship (a rename, a list, a one-line fix, a regex), write the sentence instead and stop.
+Then pick the scope:
 
-Done when: you named one type, or chose a sentence.
+- **Overview plus deep dive** for architecture, design, state, data-flow, and concept requests. The **overview** shows the whole idea in at most 7 boxes, readable in five seconds. The **deep dive** sits to its right and adds the parts, groups, and rules a person needs to work on it. Reuse the overview's names, colors, and relative positions in the deep dive, so the reader carries one map into the other.
+- **One diagram** for a code change, a sequence, or a decision tree.
+- **A sentence instead** when the claim has no spatial relationship (a rename, a list, a one-line fix, a regex).
+
+Done when: you named a type and a scope.
 
 ## 2. Write the brief
 
@@ -35,38 +40,39 @@ Write four lines before any canvas command, and show them to the user with the r
 Reader:   reviewer of PR #412, knows the service, not this module
 Question: what does the retry queue change about write ordering?
 Claim:    writes now pass through RetryQueue, so a failed write retries after newer writes.
-Type:     code change, one layout
+Type:     code change, one diagram
 ```
 
 Read the code first. Use the names the code uses, and draw only parts that exist.
 
 Done when: the claim is one sentence that names what the picture shows.
 
-## 3. Stay inside the budget
+## 3. Compose the drawing
 
-| Budget | Default | Lint flag |
-|---|---|---|
-| Nodes | 3–7, at most 12; split above that | `--max-nodes` |
-| Words per node label line | ≤ 5. Line one is a name of ≤ 4 words, line two an optional file path or type | `--max-label-words` |
-| Arrow label | verb first, ≤ 3 words (`writes`, `polls 30s`, `emits OrderCreated`) | `--max-arrow-words` |
-| Free notes | ≤ 2, ≤ 12 words each, placed beside the element they explain | `--max-note-words` |
-| Total words | ≤ 40; sentences go in the caption or surrounding prose | `--max-words` |
-| Colors with meaning | ≤ 5 plus gray; one accent on the 1–2 elements the claim is about | `--max-colors` |
-| Edge crossings | 0 | none |
+Every drawing has these parts:
 
-Raise a limit only when the brief says why. A field-list diagram that must show every field is a valid reason.
+- **A title** at the top left, fontSize 28: the subject and scope, such as "Standup jobs: task_attempt lifecycle".
+- **Color with meaning.** Color by kind, layer, or outcome: success green, failure red, waiting or external gray, the claim's subject in the accent. Color families: `../slide-deck/references/style-system.md`. A drawing in one gray says nothing with color.
+- **Short box labels.** A name of at most 4 words, plus an optional second line with a file path or type.
+- **Labeled arrows** that say what moves or happens (`claims`, `error, timeout`, `emits OrderCreated`). Leave an arrow unlabeled only when the label adds nothing, such as a parent link in a commit graph.
+- **One rules panel** in a deep dive, for the detail that does not fit on a mark: invariants, timeouts, edge cases. Draw it as a dashed rectangle with a free text title ("Rules") and short bullet lines, below or beside the picture.
+- **Dotted groups** for real boundaries (a process, a package, a trust zone), so the reader sees the high level and the parts at once.
+- **A compact shape.** Aim for 4:3 to 16:9. Lint fails a panel wider than 3:1. Wrap a long flow into two rows, or switch to top-down.
 
-## 4. Lay it out from a spec
+Sizes: at most 7 boxes in an overview, at most 15 in a deep dive. Split above that.
 
-For any boxes-and-arrows diagram, write a graph spec and let ELK place it. One-time setup: `npm install --prefix <skill>/scripts`.
+## 4. Place the shapes
+
+**ELK layout** suits pipelines, data flows, and long chains. Write a graph spec, and `layout.mjs` places it. One-time setup: `npm install --prefix <skill>/scripts`.
 
 ```json
 {
+  "title": "Orders: writes now go through RetryQueue",
   "direction": "RIGHT",
   "nodes": [
     {"id": "api", "label": "API handler", "sub": "src/api/orders.ts", "change": "context"},
     {"id": "q", "label": "RetryQueue", "sub": "src/queue/retry.ts", "change": "added"},
-    {"id": "db", "label": "Postgres", "change": "context"}
+    {"id": "db", "label": "Postgres", "fam": "blue"}
   ],
   "edges": [
     {"from": "api", "to": "q", "label": "enqueues", "change": "added"},
@@ -81,27 +87,29 @@ For any boxes-and-arrows diagram, write a graph spec and let ELK place it. One-t
 node <skill>/scripts/layout.mjs spec.json | npx -y mcp-excalidraw-server@2.1.2 add
 ```
 
-The header of `scripts/layout.mjs` lists every spec field. Use `"direction": "RIGHT"` for flows and pipelines, and `"DOWN"` for layers. Use a group only for a real boundary: a process, a package, a trust zone.
+The header of `scripts/layout.mjs` lists every field. Nodes and edges take a color family in `fam`. Back edges (a retry, a reply) bend the whole layout, so draw a retry as a separate "next attempt" node or place that diagram by hand.
 
-On a shared canvas, set `"origin": [x, y]` and give every node and group id a diagram prefix (`optA-api`, `optB-api`). Element ids derive from them, and a repeated id replaces the earlier element.
+**Hand placement** suits hub architectures, state machines, sequences, comparisons, and trees. Lay out a grid first:
 
-For a style-system texture (cross-hatch hash, zigzag secret), lay out first, then `update <id> --set '{"fillStyle": "cross-hatch"}'`.
+- Put the hub or the main path in the middle row, and the start at the left.
+- Leave 80–120px between boxes, and 130px or more where an arrow carries a 3-word label.
+- Sequence: lanes 220px apart, lifelines as dashed lines, one message every 60px, each label just above its arrow.
+- Set `"roundness": {"type": 3, "value": 0}` on every rectangle. An omitted roundness exports rounded.
+- Give a free text element `"textAlign": "left", "verticalAlign": "top"`.
 
-To change the diagram, edit the spec. Delete the old elements (`query --bbox x0,y0,x1,y1`, then `delete` those ids), and rerun. ELK is deterministic, so an unchanged graph keeps its positions.
+On a shared canvas, give every id a per-diagram prefix (`optA-api`). A repeated id replaces the earlier element. Apply style-system textures after layout with `update <id> --set '{"fillStyle": "cross-hatch"}'`.
 
-Place coordinates by hand only for shapes ELK cannot express, such as a sequence diagram, a merkle tree, or a field layout inside a box. Then keep the **spine**: the main path on one straight axis, with side branches above or below it.
-
-Done when: the diagram is on the canvas.
+Done when: the drawing is on the canvas.
 
 ## 5. Lint, render, critique
 
-1. Run `python3 <skill>/scripts/lint_diagram.py scene.excalidraw`, or pipe `export` into it with `-`. On a shared canvas, add `--box x0,y0,x1,y1`. Fix every FAIL, then rerun.
-2. Render with `screenshot --scale 2 --out view.png`, and view the image.
+1. Export the scene, then run `python3 <skill>/scripts/lint_diagram.py scene.excalidraw`. Lint each panel of an overview plus deep dive with `--box x0,y0,x1,y1`. Fix every FAIL, then rerun.
+2. Render the exported file: `timeout 120 npx -y mcp-excalidraw-server@2.1.2 render scene.excalidraw --scale 2 --out view-N.png`. Use a new file name for each render, so you never view a stale image. View it.
 3. Write the critique, three lines:
    - **Squint:** what the eye lands on first. It should be the claim's subject.
-   - **Remove:** one node, arrow, or word that can go. Remove it, or say why it stays.
+   - **Remove:** one box, arrow, or word that can go. Remove it, or say why it stays.
    - **Claim:** restate the claim from the picture alone. It should match the brief.
-4. Check hygiene in the same image: no clipped text, no overlaps, no label on a line, ≥ 40px between shapes.
+4. Check hygiene in the same image: no clipped or wrapped label, no overlap, no label on a line or arrowhead.
 
 Fix, then repeat from step 1.
 
@@ -109,7 +117,7 @@ Done when: lint passes, and all three critique lines match the brief.
 
 ## 6. Code-change diagrams
 
-Draw the change inside its unchanged neighbors, in one layout. Set `change` on nodes and edges in the spec:
+Draw the change inside its unchanged neighbors, in one layout. Set `change` on nodes and edges:
 
 | `change` | Look |
 |---|---|
@@ -118,10 +126,12 @@ Draw the change inside its unchanged neighbors, in one layout. Set `change` on n
 | `removed` | red dashed stroke, no fill |
 | `context` | gray stroke, no fill |
 
-Put the file path in `sub` on each changed node. Put the one-sentence claim above the figure. Keep detail that exists only in the lines (a condition, an off-by-one, a regex) in the diff.
+Put the file path in `sub` on changed nodes, or in the group label when every node shares one file. Put the one-sentence claim in the title. Keep detail that exists only in the lines (a condition, an off-by-one, a regex) in the diff.
 
-## Style
+## Canvas gotchas
 
-- Square corners on every box. Omit `roundness`.
-- Color families and textures for domain diagrams: `../slide-deck/references/style-system.md`. Code-change diagrams use only the section 6 palette.
-- Add a legend only when an encoding repeats and its meaning is not written on the mark itself.
+- **Own canvas:** set `PORT=<p> EXPRESS_SERVER_URL=http://127.0.0.1:<p>` on every command to run a private canvas. The default port 3000 is often the user's live canvas.
+- **Glyphs:** the hand font lacks `→`, `≤`, `§`, `•`, and subscripts. These fall back to another font. Write `->`, `<=`, `-`, and `n1`.
+- **Arrows:** a bound arrow (`startElementId`/`endElementId`) ignores `points` and runs straight. Use an unbound arrow for a routed path.
+- **Patches:** `apply` runs deletes after creates. Do not delete and recreate one id in a single patch.
+- **Deletes:** deleting a shape leaves its bound arrows. Delete them too.

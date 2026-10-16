@@ -8,7 +8,8 @@ Usage:
 
 A node is a shape with a label. A zone is a shape without one. A text element
 whose id is "<element id>-label" labels that element (layout.mjs writes these).
-Any other free text is a note. Raise a limit with a flag only when the brief says why.
+Free text (titles, rules panels, notes) has no word limit. Raise a limit with a flag
+only when the brief says why.
 """
 import argparse
 import json
@@ -73,12 +74,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("scene", help=".excalidraw file, or - for stdin")
     ap.add_argument("--box", help="x0,y0,x1,y1: lint only elements inside this scene region")
-    ap.add_argument("--max-nodes", type=int, default=12)
-    ap.add_argument("--max-words", type=int, default=40, help="total words in the drawing")
+    ap.add_argument("--max-nodes", type=int, default=15)
     ap.add_argument("--max-label-words", type=int, default=5, help="words per line of a node label")
-    ap.add_argument("--max-arrow-words", type=int, default=3)
-    ap.add_argument("--max-notes", type=int, default=2)
-    ap.add_argument("--max-note-words", type=int, default=12, help="words in one note")
+    ap.add_argument("--max-arrow-words", type=int, default=5)
+    ap.add_argument("--max-aspect", type=float, default=3.0, help="width / height of the drawing")
     ap.add_argument("--max-colors", type=int, default=5, help="distinct non-gray stroke colors")
     args = ap.parse_args()
 
@@ -95,7 +94,6 @@ def main():
         owner = t.get("containerId") or (t["id"][:-len("-label")] if t["id"].endswith("-label") else None)
         if owner in by_id:
             labels[owner] = t
-    notes = [t for t in texts if t not in labels.values()]
     shapes = [e for e in els if e["type"] in SHAPES]
     nodes = [s for s in shapes if s["id"] in labels and labels[s["id"]].get("containerId")]
     edges = [e for e in els if e["type"] == "arrow"
@@ -106,8 +104,12 @@ def main():
         fails.append(f"nodes={len(nodes)} (max {args.max_nodes}). Split the diagram.")
 
     total = sum(words(t.get("originalText") or t["text"]) for t in texts)
-    if total > args.max_words:
-        fails.append(f"words={total} (max {args.max_words}). Move sentences to the caption.")
+    if els:
+        boxes = [bbox(e) for e in els]
+        w = max(b[2] for b in boxes) - min(b[0] for b in boxes)
+        h = max(b[3] for b in boxes) - min(b[1] for b in boxes)
+        if h and w / h > args.max_aspect:
+            fails.append(f"aspect={w / h:.1f}:1 (max {args.max_aspect}:1). Wrap the flow or lay it out top-down.")
 
     for owner, t in labels.items():
         is_edge = by_id[owner] in edges
@@ -121,13 +123,9 @@ def main():
             if tx0 < bx0 or ty0 < by0 or tx1 > bx1 or ty1 > by1:
                 fails.append(f"{owner}: label spills out of its box. Widen the box or cut words.")
 
-    if len(notes) > args.max_notes:
-        fails.append(f"notes={len(notes)} (max {args.max_notes}). Move them to the caption.")
-    for t in notes:
-        if words(t["text"]) > args.max_note_words:
-            fails.append(f"{t['id']}: note has {words(t['text'])} words (max {args.max_note_words}).")
-
     colors = {s.get("strokeColor", "").lower() for s in shapes + edges} - NEUTRAL - {""}
+    if len(nodes) >= 4 and not colors:
+        warns.append("every shape is gray or black. Color by kind, layer, or outcome.")
     if len(colors) > args.max_colors:
         fails.append(f"colors={len(colors)} (max {args.max_colors}): {', '.join(sorted(colors))}")
 
@@ -154,15 +152,13 @@ def main():
                 continue  # an endpoint box
             if any(through(s, box) for s in zip(pts, pts[1:])):
                 fails.append(f"{eid} passes through {n['id']}")
-        if eid not in labels:
-            warns.append(f"{eid}: arrow has no label.")
 
     for line in fails:
         print("FAIL ", line)
     for line in warns:
         print("WARN ", line)
     print(f"{'FAIL' if fails else 'PASS'}  nodes={len(nodes)} words={total} edges={len(edges)} "
-          f"notes={len(notes)} colors={len(colors)}")
+          f"colors={len(colors)}")
     sys.exit(1 if fails else 0)
 
 

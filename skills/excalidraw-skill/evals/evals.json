@@ -4,7 +4,7 @@
     {
       "id": 0,
       "prompt": "A PR replaces direct database writes in the orders API handler (src/api/orders.ts) with a new RetryQueue (src/queue/retry.ts) that writes to Postgres and retries failures. Draw a diagram for the PR description.",
-      "expected_output": "A four-line brief whose claim mentions write ordering or retries. One code-change diagram in one layout, laid out from a spec with layout.mjs: 3-5 nodes, RetryQueue and its edges green, the old handler-to-Postgres edge red dashed, untouched nodes gray, file paths as node subtitles, verb-first arrow labels. lint_diagram.py passes. A written squint/remove/claim critique of the headless render.",
+      "expected_output": "A four-line brief whose claim mentions write ordering or retries. One code-change diagram with a title, laid out from a spec with layout.mjs: 3-5 nodes, RetryQueue and its edges green, the old handler-to-Postgres edge red dashed, untouched nodes gray, file paths as node subtitles, verb-first arrow labels. lint_diagram.py passes. A written squint/remove/claim critique of the headless render.",
       "files": []
     },
     {
@@ -16,13 +16,13 @@
     {
       "id": 2,
       "prompt": "We are choosing between two designs for cache invalidation: (A) the writer deletes the cache key after each DB write, (B) the DB emits change events to a queue and a worker invalidates the cache. Draw something that helps me choose.",
-      "expected_output": "A brief, then two diagrams in the same layout and node positions (writer, DB, cache, plus queue and worker in B) where the differing edges carry the accent color. At most 7 nodes each, every arrow labeled with a verb, no sentences inside the drawing. Lint passes for each.",
+      "expected_output": "A brief, then two diagrams in the same layout and node positions (writer, DB, cache, plus queue and worker in B), each with a title, where the differing edges carry the accent color. Every arrow labeled with what happens. Each panel lints clean with --box, including the 3:1 aspect limit.",
       "files": []
     },
     {
       "id": 3,
       "prompt": "Explain with a diagram how a request flows through our service: client -> nginx -> api (validates the token with auth-svc) -> postgres, and api publishes an audit event to kafka that the audit-worker consumes.",
-      "expected_output": "A left-to-right diagram from a layout.mjs spec with the main request path on one straight row and auth-svc, kafka, and audit-worker as side branches. 6-7 nodes, no crossings, verb-first arrow labels of at most 3 words, total words at most 40, lint passes, and a written critique.",
+      "expected_output": "An overview (at most 7 boxes) and a deep dive to its right that reuses the overview's names and colors. The main request path runs on one row, with auth-svc, kafka, and audit-worker as side branches. Titles, colors by kind, labeled arrows, no crossings, and each panel passes lint with --box.",
       "files": []
     },
     {
