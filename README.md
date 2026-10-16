@@ -14,8 +14,8 @@ Personal Claude Code skills and scripts for building presentations and diagrams.
   - `assets/draw.py`, `assets/trim.py` - write canvas diagrams as code; trim rendered figures.
   - `assets/template.html` - the deck chrome: theme tokens (light + dark), the lavender
     chevron brand strip, and the JS whole-slide settle navigation.
-- `skills/excalidraw-skill/` - diagram skill: brief, budgets, ELK layout from a graph spec
-  (`scripts/layout.mjs`), a budget lint (`scripts/lint_diagram.py`), and a render-and-critique loop.
+- `skills/excalidraw-skill/` - diagram skill: brief, composition rules, a hand-placement helper
+  (`scripts/place.py`), a geometry lint (`scripts/lint_diagram.py`), and a render-and-critique loop.
   Canvas mechanics are in `references/mechanics.md`.
 - `examples/demo-deck/` - a deck that uses every slides.md feature, with its diagram drawn as code.
   CI (`.github/workflows/example-deck.yml`) builds it to HTML and PDF and attaches both to the
@@ -35,8 +35,7 @@ every save.
 The excalidraw skill drives a live canvas via the `mcp-excalidraw-server` npm package
 (CLI: `npx -y mcp-excalidraw-server <command>`; it can also be registered as an MCP server).
 The canvas serves at `http://127.0.0.1:3000`. Since 2.1, screenshots and exports render headless;
-open the page only to watch or edit. `skills/excalidraw-skill/scripts` needs a one-time
-`npm install --prefix skills/excalidraw-skill/scripts` for ELK. Diagram crops are produced with Pillow
+open the page only to watch or edit. Diagram crops are produced with Pillow
 (`pip install --user --break-system-packages pillow`).
 
 ## Installing the skills

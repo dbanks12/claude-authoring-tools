@@ -26,8 +26,8 @@ Pick the type from the reader's question:
 
 Then pick the scope:
 
-- **Overview plus deep dive** for architecture, design, state, data-flow, and concept requests. The **overview** shows the whole idea in at most 7 boxes, readable in five seconds. The **deep dive** sits to its right and adds the parts, groups, and rules a person needs to work on it. Reuse the overview's names, colors, and relative positions in the deep dive, so the reader carries one map into the other.
-- **One diagram** for a code change, a sequence, or a decision tree.
+- **One diagram** is the default. Most subjects fit in about 7 boxes: a state machine, a design comparison, a code change, a sequence, a decision tree, a small system. Keep it concise. Draw a dense, detailed diagram only when the user asks for one.
+- **Overview, then deep dive** for a big subject: an architecture or system whose working detail needs more than about 7 boxes. These are two separate diagrams, each exported and rendered to its own file. The **overview** shows the whole idea in at most 7 boxes, readable in five seconds. The **deep dive** adds the parts, groups, and rules a person needs to work on it. Reuse the overview's names, colors, and relative positions, so the reader carries one map into the other.
 - **A sentence instead** when the claim has no spatial relationship (a rename, a list, a one-line fix, a regex).
 
 Done when: you named a type and a scope.
@@ -52,58 +52,64 @@ Done when: the claim is one sentence that names what the picture shows.
 Every drawing has these parts:
 
 - **A title** at the top left, fontSize 28: the subject and scope, such as "Standup jobs: task_attempt lifecycle".
-- **Color with meaning.** Color by kind, layer, or outcome: success green, failure red, waiting or external gray, the claim's subject in the accent. Color families: `../slide-deck/references/style-system.md`. A drawing in one gray says nothing with color.
+- **Color with meaning.** Color by kind, layer, or outcome: success green, failure red, waiting or external gray, the claim's subject in the accent. `place.py` takes the families gray, blue, green, orange, purple, red, and teal. Domain textures: `../slide-deck/references/style-system.md`. A drawing in one gray says nothing with color.
 - **Short box labels.** A name of at most 4 words, plus an optional second line with a file path or type.
 - **Labeled arrows** that say what moves or happens (`claims`, `error, timeout`, `emits OrderCreated`). Leave an arrow unlabeled only when the label adds nothing, such as a parent link in a commit graph.
-- **One rules panel** in a deep dive, for the detail that does not fit on a mark: invariants, timeouts, edge cases. Draw it as a dashed rectangle with a free text title ("Rules") and short bullet lines, below or beside the picture.
+- **At most one rules panel**, only when the reader needs detail that does not fit on a mark: invariants, timeouts, edge cases. Keep it to a few short lines. `place.py` draws it.
 - **Dotted groups** for real boundaries (a process, a package, a trust zone), so the reader sees the high level and the parts at once.
-- **A compact shape.** Aim for 4:3 to 16:9. Lint fails a panel wider than 3:1. Wrap a long flow into two rows, or switch to top-down.
+- **A compact shape.** Aim for 4:3 to 16:9. Lint fails a drawing wider than 3:1. Wrap a long flow into two rows, or run it top-down.
 
-Sizes: at most 7 boxes in an overview, at most 15 in a deep dive. Split above that.
+Sizes: about 7 boxes in an overview or a small diagram, at most 15 in any diagram.
 
 ## 4. Place the shapes
 
-**ELK layout** suits pipelines, data flows, and long chains. Write a graph spec, and `layout.mjs` places it. One-time setup: `npm install --prefix <skill>/scripts`.
+Choose positions on a grid yourself, and let `scripts/place.py` build the elements. It sizes boxes to their labels, routes arrows between facing sides, spreads arrows that share a side, and puts each arrow label beside its line. Its header shows the full API.
 
-```json
-{
-  "title": "Orders: writes now go through RetryQueue",
-  "direction": "RIGHT",
-  "nodes": [
-    {"id": "api", "label": "API handler", "sub": "src/api/orders.ts", "change": "context"},
-    {"id": "q", "label": "RetryQueue", "sub": "src/queue/retry.ts", "change": "added"},
-    {"id": "db", "label": "Postgres", "fam": "blue"}
-  ],
-  "edges": [
-    {"from": "api", "to": "q", "label": "enqueues", "change": "added"},
-    {"from": "q", "to": "db", "label": "writes", "change": "added"},
-    {"from": "api", "to": "db", "label": "writes", "change": "removed"}
-  ],
-  "groups": [{"id": "svc", "label": "orders service", "members": ["api", "q"]}]
-}
+```python
+import sys; sys.path.insert(0, "<skill>/scripts")
+from place import Diagram
+
+d = Diagram("jobs", "Standup jobs: task_attempt lifecycle")
+d.start("s", -40, 122)
+d.box("queued", 80, 100, "queued")
+d.box("running", 340, 100, "running", fam="blue")
+d.box("complete", 640, 0, "complete", fam="green")
+d.box("failed", 640, 120, "failed", fam="red")
+d.arrow("s", "queued", "enqueue")
+d.arrow("queued", "running", "claim")
+d.arrow("running", "complete", "ok")
+d.arrow("running", "failed", "error, timeout")
+d.panel("rules", 0, 300, "Rules", ["Retry is manual: a new attempt n+1"])
+d.emit()
 ```
 
 ```bash
-node <skill>/scripts/layout.mjs spec.json | npx -y mcp-excalidraw-server@2.1.2 add
+python3 jobs.py | timeout 120 npx -y mcp-excalidraw-server@2.1.2 add
 ```
 
-The header of `scripts/layout.mjs` lists every field. Nodes and edges take a color family in `fam`. Back edges (a retry, a reply) bend the whole layout, so draw a retry as a separate "next attempt" node or place that diagram by hand.
+Grid rules:
 
-**Hand placement** suits hub architectures, state machines, sequences, comparisons, and trees. Lay out a grid first:
-
-- Put the hub or the main path in the middle row, and the start at the left.
+- Put the main path or the hub in the middle row, with the start at the left or top.
 - Leave 80–120px between boxes, and 130px or more where an arrow carries a 3-word label.
-- Sequence: lanes 220px apart, lifelines as dashed lines, one message every 60px, each label just above its arrow.
-- Set `"roundness": {"type": 3, "value": 0}` on every rectangle. An omitted roundness exports rounded.
-- Give a free text element `"textAlign": "left", "verticalAlign": "top"`.
+- An arrow too short for its label puts the label on a box. Lint catches it. Widen the gap.
+- `box(..., change="added")` takes the code-change palette in section 6. `fam` takes a color family.
+- `zone()` draws a dotted boundary. Place it before its contents.
+- `arrow(..., route="elbow")` turns one corner. `via=[(x, y)]` adds bend points around an obstacle.
 
-On a shared canvas, give every id a per-diagram prefix (`optA-api`). A repeated id replaces the earlier element. Apply style-system textures after layout with `update <id> --set '{"fillStyle": "cross-hatch"}'`.
+By type:
+
+- **Decision tree:** questions in `diamond()`, drawn smooth so they read cleanly. Outcomes in colored boxes. Put each child row below its parent and offset to the side. Edges then run diagonally, parent to child, and the drawing reads as a tree rather than a grid. Answers (`yes`, `SSD`) go on the arrows.
+- **State machine:** a `start()` dot, states left to right in the order a run visits them, outcomes colored by result. Draw a retry as a dashed arrow back, or as a separate "next attempt" state.
+- **Sequence:** lanes 220px apart, lifelines as dashed `via` arrows or lines, one message every 60px, each label above its arrow.
+- **Comparison:** the same positions in both options, with only the differing edges in the accent color.
+
+Apply style-system textures after placement with `update <id> --set '{"fillStyle": "cross-hatch"}'`.
 
 Done when: the drawing is on the canvas.
 
 ## 5. Lint, render, critique
 
-1. Export the scene, then run `python3 <skill>/scripts/lint_diagram.py scene.excalidraw`. Lint each panel of an overview plus deep dive with `--box x0,y0,x1,y1`. Fix every FAIL, then rerun.
+1. Export the scene, then run `python3 <skill>/scripts/lint_diagram.py scene.excalidraw`. Fix every FAIL, then rerun. For an overview and deep dive, `clear` between them, and export, lint, and render each one on its own.
 2. Render the exported file: `timeout 120 npx -y mcp-excalidraw-server@2.1.2 render scene.excalidraw --scale 2 --out view-N.png`. Use a new file name for each render, so you never view a stale image. View it.
 3. Write the critique, three lines:
    - **Squint:** what the eye lands on first. It should be the claim's subject.
@@ -126,12 +132,14 @@ Draw the change inside its unchanged neighbors, in one layout. Set `change` on n
 | `removed` | red dashed stroke, no fill |
 | `context` | gray stroke, no fill |
 
-Put the file path in `sub` on changed nodes, or in the group label when every node shares one file. Put the one-sentence claim in the title. Keep detail that exists only in the lines (a condition, an off-by-one, a regex) in the diff.
+Put the file path in `sub` on changed nodes, or in the zone title when every node shares one file. Put the one-sentence claim in the title. Keep detail that exists only in the lines (a condition, an off-by-one, a regex) in the diff.
 
 ## Canvas gotchas
 
 - **Own canvas:** set `PORT=<p> EXPRESS_SERVER_URL=http://127.0.0.1:<p>` on every command to run a private canvas. The default port 3000 is often the user's live canvas.
 - **Glyphs:** the hand font lacks `→`, `≤`, `§`, `•`, and subscripts. These fall back to another font. Write `->`, `<=`, `-`, and `n1`.
+- **Spaces:** free text loses leading spaces, so indented lines render flush left. Write each rule or bullet on one line.
+- **Titles and labels:** lint treats text with id `<id>-label` as the label of element `<id>`. Name a zone or panel title `<id>-title`.
 - **Arrows:** a bound arrow (`startElementId`/`endElementId`) ignores `points` and runs straight. Use an unbound arrow for a routed path.
 - **Patches:** `apply` runs deletes after creates. Do not delete and recreate one id in a single patch.
 - **Deletes:** deleting a shape leaves its bound arrows. Delete them too.
