@@ -14,9 +14,9 @@ Personal Claude Code skills and scripts for building presentations and diagrams.
   - `assets/draw.py`, `assets/trim.py` - write canvas diagrams as code; trim rendered figures.
   - `assets/template.html` - the deck chrome: theme tokens (light + dark), the lavender
     chevron brand strip, and the JS whole-slide settle navigation.
-- `skills/excalidraw-skill/` - diagram skill: brief, composition rules, a hand-placement helper
-  (`scripts/place.py`), a geometry lint (`scripts/lint_diagram.py`), and a render-and-critique loop.
-  Canvas mechanics are in `references/mechanics.md`.
+- `skills/excalidraw-skill/` - diagram skill, a submodule of the public
+  [dbanks12/excalidraw-skill](https://github.com/dbanks12/excalidraw-skill) repo. Edit it there,
+  then commit the new submodule pointer here.
 - `examples/demo-deck/` - a deck that uses every slides.md feature, with its diagram drawn as code.
   CI (`.github/workflows/example-deck.yml`) builds it to HTML and PDF and attaches both to the
   `example-latest` release.
@@ -40,7 +40,9 @@ open the page only to watch or edit. Diagram crops are produced with Pillow
 
 ## Installing the skills
 
-Symlink each skill directory so this repo stays the single source of truth:
+Fetch the excalidraw-skill submodule, then symlink each skill directory so this repo stays the single source of truth:
+
+    git submodule update --init
 
     # Claude Code
     ln -s $(pwd)/skills/slide-deck $(pwd)/skills/excalidraw-skill ~/.claude/skills/
