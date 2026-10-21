@@ -89,6 +89,10 @@ Brand mark: the lavender double-chevron (two rounded `<` strokes) right-anchored
 
 Theme the CSS token-level for all three viewer states: full light palette on bare `:root`; dark overrides under `@media (prefers-color-scheme: dark)` guarded `:root:not([data-theme="light"])`; repeated under `:root[data-theme="dark"]`. Body background always from a token.
 
+## Narrated version
+
+When the user asks for a narrated deck or a narrated explainer of one, follow the `explainer` skill with the slide-deck host. It builds a separate page with one scene per slide and reuses the helper-canvas diagrams. The deck itself stays unchanged.
+
 ## Iteration protocol
 
 Screenshot after every canvas batch and actually look at it: check label wrapping in small boxes (bound labels default to fontSize 20; set the bound text element's fontSize explicitly), caption/box collisions, and that Unicode subscripts are NOT used (the hand-drawn font lacks the glyphs; use plain digits n1, n2). Republish the artifact to the same URL by re-publishing the same file path.
