@@ -1,0 +1,3 @@
+[submodule "skills/excalidraw-skill"]
+	path = skills/excalidraw-skill
+	url = https://github.com/dbanks12/excalidraw-skill.git
