@@ -1,6 +1,6 @@
 ---
 name: slide-deck
-description: Build an HTML slide deck (Aztec-styled) from a design doc or topic, with an Excalidraw helper canvas whose diagrams are cropped and inlined into the slides. Use when the user asks for presentation slides, a deck, or "distill X into slides".
+description: Build an HTML slide deck (lavender theme) from a design doc or topic, with an Excalidraw helper canvas whose diagrams are cropped and inlined into the slides. Use when the user asks for presentation slides, a deck, or "distill X into slides".
 ---
 
 # Slide deck builder
@@ -77,15 +77,14 @@ Artifact CSP blocks external images, so crops must be data URIs:
 4. Embed as `<figure class="fig"><img src="data:image/png;base64,...">` with `max-height:34vh; object-fit:contain` so no slide overflows. Keep the figure card white in both themes (the PNGs have white grounds).
 5. Crops are snapshots: after any canvas edit, re-crop and republish. Keep the crop boxes scripted.
 
-## Theme (Aztec all-hands)
+## Theme (lavender)
 
-Extracted from the company deck (`ppt/theme/theme1.xml` of an Aztec .pptx). Font is Arial everywhere; monospace only for slide numbers and code.
+Font is Arial everywhere; monospace only for slide numbers and code.
 
 Light: bg `#e8e7ea` (light grey), ink `#121118`, accent (titles, code, card headings) periwinkle `#6f5fd8` (theme `#8D7DFF` deepened for contrast), orange pop `#d05a2e` (theme `#ED7A4F` deepened) for the one emphasized phrase per slide; list lead-ins are plain bold ink, never a colored accent, line `#cfccd8`, card `#f7f6f9`.
 
 Dark: bg `#16151b`, ink `#eceaf2`, accent `#B0A6FF`, pop `#ED7A4F`, line `#363344`, card `#1f1e26`. Do not use the theme's green as a text accent (David dislikes it); it stays only in the Excalidraw color language for success/L2 boxes.
 
-Brand mark: the lavender double-chevron (two rounded `<` strokes) right-anchored on every slide, as an inline SVG data-URI background (`#d8d3ef` light / `#232030` dark). Confine it to a `.slide::before` strip of the rightmost ~60% of the screen (`width:60%; background-size:cover; background-position:left center; pointer-events:none`, content above via z-index); it must never intrude further than ~60% into the slide. Soft-rounded (10px) cards.
 
 Theme the CSS token-level for all three viewer states: full light palette on bare `:root`; dark overrides under `@media (prefers-color-scheme: dark)` guarded `:root:not([data-theme="light"])`; repeated under `:root[data-theme="dark"]`. Body background always from a token.
 
