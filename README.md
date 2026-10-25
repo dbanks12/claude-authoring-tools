@@ -5,15 +5,15 @@ Personal Claude Code skills and scripts for building presentations and diagrams.
 ## Contents
 
 - `skills/slide-deck/` - skill for distilling a design doc into a minimal HTML slide deck
-  (Aztec all-hands theme) with an Excalidraw helper canvas. Includes the deck build tooling:
+  (lavender theme) with an Excalidraw helper canvas. Includes the deck build tooling:
   - `assets/build.py DECK` - assembles `DECK/<dirname>.html` from a human-editable `slides.md`
     plus `figures/*.png` (inlined as base64 data URIs). Maintains a syntax-reference comment at
     the top of `slides.md`; that header is the full syntax reference.
   - `assets/pdf.py DECK` - renders the HTML to a 16:9 PDF, one slide per page (headless Chromium).
   - `assets/watch.py DECK` - rebuilds HTML and PDF on every save. `assets/ci-build.sh DECK` - one CI-style build.
   - `assets/draw.py`, `assets/trim.py` - write canvas diagrams as code; trim rendered figures.
-  - `assets/template.html` - the deck chrome: theme tokens (light + dark), the lavender
-    chevron brand strip, and the JS whole-slide settle navigation.
+  - `assets/template.html` - the deck chrome: theme tokens (light + dark) and the JS
+    whole-slide settle navigation.
 - `skills/excalidraw-skill/` - diagram skill, a submodule of the public
   [dbanks12/excalidraw-skill](https://github.com/dbanks12/excalidraw-skill) repo. Edit it there,
   then commit the new submodule pointer here.

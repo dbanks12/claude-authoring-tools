@@ -1,6 +1,6 @@
 # David's diagram preferences
 
-Distilled from iterating on the oxide and SIPA canvases. Short rules for future diagrams.
+Distilled from iterating on protocol diagrams. Short rules for future diagrams.
 
 ## Structure
 
